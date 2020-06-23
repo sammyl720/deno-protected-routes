@@ -3,11 +3,14 @@ import { renderFile } from 'https://deno.land/x/dejs@0.7.0/mod.ts'
 import { hash, compare } from "https://deno.land/x/bcrypt/mod.ts";
 import { makeJwt, setExpiration, Jose, Payload } from "https://deno.land/x/djwt/create.ts";
 import "https://deno.land/x/dotenv/load.ts";
-import { User, users } from './types.ts';
+import { User } from './types.ts';
 import authMiddleware from './authMiddleware.ts';
+import db from './db.ts'
+
+const users = db.collection('users')
 const router = new Router()
 
-console.log(Deno.env.get('TEST'))
+// ? console.log(Deno.env.get('TEST'))
 router.get('/', async ( ctx: RouterContext) => {
   if(ctx.state.currentUser) {
     ctx.response.redirect('/protected')
@@ -39,15 +42,15 @@ router.post('/register', async(ctx: RouterContext) => {
     email: body.value.get('email'),
     password: hashedPassword
   }
-  console.log(user)
-  const userExists = users.find(u => u.email === user.email)
+  // ? console.log(user)
+  const userExists = await users.findOne({ email: user.email })
   if(userExists){
-    console.log('user exists already')
+    // ? console.log('user exists already')
     ctx.response.body =  await renderFile(`${Deno.cwd()}/views/register.ejs`, {
       error: 'User exists already'
     })
   } else {
-    users.push(user)
+    await users.insertOne(user)
     ctx.response.redirect('/login')
   }
 
@@ -60,14 +63,14 @@ router.post('/login', async (ctx: RouterContext) => {
     password: body.value.get('password')// needs encryption
   }
 
-  const userExists: User | any = users.find(u => u.email === body.value.get('email'))
+  const userExists: User | any = await users.findOne({ email: user.email })
   if(!userExists){
-    console.log('invalid credentails')
+    // ? console.log('invalid credentails')
     ctx.response.body = await renderFile(`${Deno.cwd()}/views/login.ejs`, {
       error: 'Invalid Credentails'
     })
   } else if(! await compare(body.value.get('password'), userExists.password)) {
-    console.log('invalid password')
+    // ? console.log('invalid password')
     ctx.response.body = await renderFile(`${Deno.cwd()}/views/login.ejs`, {
       error: 'Invalid Credentails'
     })
@@ -82,17 +85,17 @@ router.post('/login', async (ctx: RouterContext) => {
       typ: "JWT",
     };
     const jwtToken = makeJwt({header, payload, key})
-    console.log(`JWT Token: ${jwtToken}`)
+    // ? console.log(`JWT Token: ${jwtToken}`)
     ctx.cookies.set('jwtToken', jwtToken)
     ctx.response.redirect('/protected')
   }
-  console.log(user)
+  // ? console.log(user)
 })
 
 
 
 router.get('/protected',authMiddleware, async(ctx:RouterContext) => {
-  console.log(ctx.state.currentUser)
+  // ? console.log(ctx.state.currentUser)
   ctx.response.body = await renderFile(`${Deno.cwd()}/views/protected.ejs`, {
     currentUser: ctx.state.currentUser
   })

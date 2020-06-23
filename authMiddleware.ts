@@ -1,6 +1,9 @@
 import { Context } from "https://deno.land/x/oak/mod.ts";
 import { validateJwt } from "https://deno.land/x/djwt/validate.ts";
-import {users} from './types.ts'
+import db from './db.ts'
+import { User } from './types.ts';
+
+const users = db.collection('users')
 const authMiddleware = async (ctx: Context, next: any) => {
   const token: string = ctx.cookies.get('jwtToken') || ''
   const key: string = Deno.env.get('JWT_KEY') || ''
@@ -16,7 +19,7 @@ const authMiddleware = async (ctx: Context, next: any) => {
   } else {
 
     if(!ctx.state.currentUser){
-      ctx.state.currentUser = users.find(u => u.email === validatedToken.payload?.iss)
+      ctx.state.currentUser = await users.findOne({ email: validatedToken.payload?.iss })
     } 
     await next()
   }
