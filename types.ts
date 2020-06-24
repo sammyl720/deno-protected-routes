@@ -5,9 +5,14 @@ interface User {
   password: string
 }
 
-const users: User[] = []
+interface Post {
+  _id?: { $oid: string };
+  userId: { $oid: string };
+  text: string;
+  date: Date;
+}
 
 export {
-  users,
-  User
+  User,
+  Post
 }

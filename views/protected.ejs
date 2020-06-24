@@ -10,10 +10,41 @@
 
 <body>
     <div class="container">
-        <h1>Welcome back
-            <%= currentUser.name %>
-        </h1>
-        <a href="/logout" class="btn btn-warning">Logout</a>
+        <a href="/logout" class="btn btn-warning float-right my-3">Logout</a>
+        <form action="/post" method="post" class="m-2 p-2 container card">
+            <div class="card-header">
+                <h1>Welcome back
+                    <%= currentUser.name %>
+                </h1>
+            </div>
+            <div class="input-group card-body">
+                <input type="text" class="form-control" name="text" placeholder="What's on your mind?" required>
+            </div>
+            <div class="card-footer">
+
+                <button type="post" class="btn btn-success btn-lg m-1 float-right">Post</button>
+            </div>
+        </form>
+        <div class="container mt-3">
+            <div class="card container" style="margin:center;max-width:500px;">
+                <ul class="list-group list-group-flush">
+                    <% for (let i = 0; i < posts.length; i++) { %>
+                        <li class="list-group-item">
+                            <h3>
+                                <%= posts[i].text %>
+                            </h3>
+                            <br>
+                            <small class="muted float-right">
+                                
+                                <%= posts[i].date.toDateString() %>
+                                <%= posts[i].date.toTimeString() %>
+                            </small>
+                        </li>
+
+                        <% } %>
+                </ul>
+            </div>
+        </div>
     </div>
 
 </body>

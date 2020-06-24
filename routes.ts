@@ -3,11 +3,12 @@ import { renderFile } from 'https://deno.land/x/dejs@0.7.0/mod.ts'
 import { hash, compare } from "https://deno.land/x/bcrypt/mod.ts";
 import { makeJwt, setExpiration, Jose, Payload } from "https://deno.land/x/djwt/create.ts";
 import "https://deno.land/x/dotenv/load.ts";
-import { User } from './types.ts';
+import { User, Post } from './types.ts';
 import authMiddleware from './authMiddleware.ts';
 import db from './db.ts'
 
 const users = db.collection('users')
+const posts = db.collection('posts')
 const router = new Router()
 
 // ? console.log(Deno.env.get('TEST'))
@@ -96,9 +97,28 @@ router.post('/login', async (ctx: RouterContext) => {
 
 router.get('/protected',authMiddleware, async(ctx:RouterContext) => {
   // ? console.log(ctx.state.currentUser)
-  ctx.response.body = await renderFile(`${Deno.cwd()}/views/protected.ejs`, {
-    currentUser: ctx.state.currentUser
+  const userPosts = await posts.find({ userId: ctx.state.currentUser._id }, {
+
   })
+  console.log(userPosts)
+  ctx.response.body = await renderFile(`${Deno.cwd()}/views/protected.ejs`, {
+    currentUser: ctx.state.currentUser,
+    posts:userPosts.reverse()
+  })
+})
+
+router.post('/post', authMiddleware, async (ctx: RouterContext) => {
+  const body = await ctx.request.body();
+  const text = body.value.get('text')
+  const userPost:Post = {
+    userId: ctx.state.currentUser._id,
+    text,
+    date: new Date()
+  }
+
+  const savedPost = await posts.insertOne(userPost)
+  console.log(savedPost)
+  ctx.response.redirect('/protected')
 })
 
 router.get('/logout', async (ctx:RouterContext) => {
